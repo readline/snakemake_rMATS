@@ -1,0 +1,4 @@
+cachedir: cache
+simg:
+    rmats:             https://depot.galaxyproject.org/singularity/rmats%3A4.3.0--py312h9a51afc_5
+    rmats2sashimiplot: https://depot.galaxyproject.org/singularity/rmats2sashimiplot%3A3.0.0--py312hc5e4ab4_2
