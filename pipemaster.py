@@ -85,29 +85,11 @@ def main():
         os.system('mkdir -p %s'%(os.path.join(os.path.realpath(options.workdir), 'Pipe_runtime', snapshot, 'logs', 'slurm')))
     # Check and write samplesheet to the workdir
     try:
-        sample_dic, lb_dic, rg_dic, pu_dic, sm2st, lb2st, rg2st, rl_dic, lb_dic_, sample_dic_, sm2rg_dic = \
-            samplesheet(options.samplesheet)
+        sample_dic, group_dic, maxreadlen, combinations = samplesheet(options.samplesheet)
     except:
         parser.error("Samplesheet failed to load. Check %s"%(options.samplesheet))
     
     ssdf = pd.read_csv(options.samplesheet, sep='\t')
-    for i in ssdf.index:
-        for read in ['R1','R2']:
-            tmpreads = []
-            for r in ssdf.loc[i,read].split(','):
-                if r[0] == '/':
-                    if not os.path.exists(r):
-                        parser.error("Couldn't find fastq file: RG:%s,PATH:%s."%(i, r))
-                else:
-                    try:
-                        realpath = os.path.realpath(r)
-                        if os.path.exists(realpath):
-                            tmpreads.append(realpath)
-                    except:
-                        raise Exception("Fastq file unaccessible: %s"%ssdf.loc[i,read])
-            ssdf.loc[i,read] = ','.join(tmpreads)
-            
-                
     ssdf.to_csv(os.path.join(options.workdir, 'Pipe_runtime', snapshot, 'samplesheet.tsv'), sep='\t', index=None)
     
     #######################################################################################
@@ -119,22 +101,33 @@ def main():
     config['pipelinedir'] = os.path.join(config['workdir'], 'Pipe_runtime', snapshot)
     config['cachedir'] = os.path.realpath(options.cachedir)
     config['snapshot'] = snapshot
+    config['references'] = {}
     config['options'] = {}
 
-    for cfg in ['config.yaml','reference.yaml']:
-        with open(os.path.join(pipedir, 'config', cfg), 'r') as infile:
-            tmpcfg = yaml.safe_load(infile)
-            for i in tmpcfg:
-                if i not in config:
-                    config[i] = tmpcfg[i]
+    with open(os.path.join(pipedir, 'config', 'config.yaml'), 'r') as infile:
+        tmpcfg = yaml.safe_load(infile)
+        for i in tmpcfg:
+            if i not in config:
+                config[i] = tmpcfg[i]
+    
+    with open(os.path.join(pipedir, 'config', 'reference.yaml'), 'r') as infile:
+        tmpcfg = yaml.safe_load(infile)
+        for i in tmpcfg['references']:
+            if i not in config['references']:
+                config['references'][i] = os.path.join(pipedir, tmpcfg['cachedir'], tmpcfg['references'][i]['path'])
                     
     with open(os.path.join(pipedir, 'config', 'container.yaml'), 'r') as infile:
         tmpcfg = yaml.safe_load(infile)
         config['container'] = {}
-        for c in tmpcfg['docker']:
-            config['container'][c] = os.path.join(config['cachedir'], 'container', '%s.simg'%(c))
-        for c in tmpcfg['simg']:
-            config['container'][c] = os.path.join(config['cachedir'], 'container', '%s.simg'%(c))
+        if tmpcfg['docker']:
+            for c in tmpcfg['docker']:
+                config['container'][c] = os.path.join(config['cachedir'], 'container', '%s.simg'%(c))
+        if tmpcfg['simg']:
+            for c in tmpcfg['simg']:
+                config['container'][c] = os.path.join(config['cachedir'], 'container', '%s.simg'%(c))
+        if tmpcfg['singularity']:
+            for c in tmpcfg['singularity']:
+                config['container'][c] = os.path.join(config['cachedir'], 'container', '%s.simg'%(c))
      
     with open(os.path.join(config['workdir'], 'Pipe_runtime', snapshot, 'config.yaml'), 'w') as savefile:
         savefile.write(yaml.dump(config))
@@ -169,7 +162,7 @@ def main():
             captain = infile.read()
             if options.silent:
                 captain = captain.replace('#SBATCH --mail-type=BEGIN,END,FAIL\n','')
-            captain = captain.replace('[[PIPENICKNAME]]','RNApipe_hs')
+            captain = captain.replace('[[PIPENICKNAME]]','rMATS')
             captain = captain.replace('[[WORKDIR]]', config['workdir'])
             captain = captain.replace('[[BINDPATH]]', config['bindpath'])
             captain = captain.replace('[[SNAPSHOT]]', config['snapshot'])

@@ -28,9 +28,9 @@ def container(config):
         with open('%s/%s.simg.ok'%(containerdir, img), 'w') as savefile:
             savefile.write(config['simg'][img]+'\n')
             print('Container', img, 'downloaded...')
-    
+
     # Pull from registries
-    if 'docker' not in config:
+    if not config['docker']:
         config['docker'] = []
     for img in config['docker']:
         if not os.path.exists('%s/%s.simg.ok'%(containerdir, img)):
@@ -103,6 +103,9 @@ def reference(config):
             raise Exception("Command exited with non-zero code.")
     print('Reference download finished!')
     
+    # gunzip gencode.v47.annotation.gtf.gz
+    os.system('cd %s && gunzip %s.gz'%(cachedir, config['references'][item]['pack']))
+    
     # Unpack and organize files
     if os.path.exists('%s/unpack.ok'%(refdir)):
         with open('%s/unpack.ok'%(refdir)) as infile:
@@ -111,6 +114,9 @@ def reference(config):
         unpacked = []
     print('Reference cache finished!')
     print('#'*80)
+    if not os.path.exists('%s/ref.ok'%(refdir)):
+        with open('%s/ref.ok'%(refdir), 'w'):
+            pass
     return True
     
 def test_container(configpath):

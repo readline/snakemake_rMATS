@@ -1,2 +1,6 @@
 cachedir: cache
 references:
+    gtf:
+        link:   https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.annotation.gtf.gz
+        pack:   reference/gencode.v47.annotation.gtf
+        path:   reference/gencode.v47.annotation.gtf

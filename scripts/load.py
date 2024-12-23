@@ -9,6 +9,7 @@ def samplesheet(sspath):
     # Initialize dictionaries
     sample_dic = {}  # Sample -> {Group, Readlen, Bam}
     group_dic = {}   # Group -> [Samples]
+    combinations = {}   # {Group1.vs.Group2: (Group1, Group2), ...}]
     
     # Process each row
     for _, row in df.iterrows():
@@ -25,10 +26,17 @@ def samplesheet(sspath):
         group_dic[row['Group']].append(row['Sample'])
     
     maxreadlen = df['Readlen'].max()
-    return sample_dic, group_dic, maxreadlen
+    
+    # Create combinations
+    for i in range(0, len(group_dic)):
+        for j in range(i+1, len(group_dic)):
+            group1 = list(group_dic.keys())[i]
+            group2 = list(group_dic.keys())[j]
+            combinations['%s.vs.%s'%(group1, group2)] = (group1, group2)
+    return sample_dic, group_dic, maxreadlen, combinations
 
     
 
 if __name__ == '__main__':
-    for (i,j) in zip('sample_dic, group_dic, maxreadlen'.split(','), samplesheet(sys.argv[1])):
+    for (i,j) in zip('sample_dic, group_dic, maxreadlen, combinations'.split(','), samplesheet(sys.argv[1])):
         print(i,j)
