@@ -33,7 +33,7 @@ rule all:
             group=group_dic,
         ),
         expand(
-            join(config['workdir'], "01.rmats","{vs}","rmats.ok"),
+            join(config['workdir'], "01.rmats","{vs}",'filtered','sashimiplot','sashimiplot.ok'),
             vs=combinations,
         )
         # expand(
